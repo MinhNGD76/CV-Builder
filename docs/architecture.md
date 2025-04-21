@@ -1,3 +1,8 @@
+**Team Members**:
+- Trần Thái Bình Minh – B21DCVT034
+- Hoàng Trọng Khôi - B21DCVT026
+- Nguyễn Đình Minh - B21DCCN086
+
 # 🏗️ System Architecture - CV Builder Microservices
 
 ## 📌 Overview

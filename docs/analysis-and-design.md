@@ -1,3 +1,8 @@
+**Team Members**:
+- Trần Thái Bình Minh – B21DCVT034
+- Hoàng Trọng Khôi - B21DCVT026
+- Nguyễn Đình Minh - B21DCCN086
+
 # 📊 Microservices System - Analysis and Design
 
 This document outlines the **analysis** and **design** process for our microservices-based CV builder system using event sourcing. It explains the key decisions and architecture behind the system.
