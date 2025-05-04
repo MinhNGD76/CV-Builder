@@ -4,6 +4,7 @@ import { Model } from 'mongoose';
 import { Event, EventDocument } from './entities/event.schema';
 import { Block } from './interfaces/block.interface';
 import * as crypto from 'crypto';
+import axios from 'axios';
 
 @Injectable()
 export class CvService {
@@ -25,7 +26,22 @@ export class CvService {
   async emitEvent(eventType: string, cvId: string, userId: string, payload: any) {
     const signature = this.sign({ eventType, cvId, userId, payload });
     const event = new this.eventModel({ eventType, cvId, userId, payload, signature });
-    return event.save();
+    const savedEvent = await event.save();
+  
+    // 🟢 Push event sang cv-query
+    try {
+      await axios.post('http://cv-query:3000/cv/sync-event', {
+        eventType,
+        cvId,
+        userId,
+        payload,
+      });
+      console.log(`[cv-command] ✅ Event ${eventType} pushed to cv-query`);
+    } catch (err) {
+      console.error(`[cv-command] ❌ Failed to push event to cv-query:`, err.message);
+    }
+  
+    return savedEvent;
   }
 
   async undoLastEvent(cvId: string) {

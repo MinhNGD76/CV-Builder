@@ -27,13 +27,13 @@ services:
     volumes:
       - mongo-event-data:/data/db
 
-  # mongo-projection:
-  #   image: mongo
-  #   container_name: mongo-projection
-  #   ports:
-  #     - "27020:27017"
-  #   volumes:
-  #     - mongo-projection-data:/data/db
+  mongo-projection:
+    image: mongo
+    container_name: mongo-projection
+    ports:
+      - "27020:27017"
+    volumes:
+      - mongo-projection-data:/data/db
 
   # ========== BACKEND SERVICES ==========
   auth:
@@ -68,17 +68,17 @@ services:
     depends_on:
       - mongo-event
 
-  # cv-query:
-  #   build: ./services/cv-query
-  #   container_name: cv-query
-  #   ports:
-  #     - "3004:3000"
-  #   environment:
-  #     - MONGO_URI=mongodb://mongo-projection:27017/projection-db
-  #     - EVENT_SIGN_SECRET=sign-me
-  #   depends_on:
-  #     - mongo-projection
-  #     - mongo-event
+  cv-query:
+    build: ./services/cv-query
+    container_name: cv-query
+    ports:
+      - "3004:3000"
+    environment:
+      - MONGO_URI=mongodb+srv://binhminhptit01:w0WNaHQ4faUdniaj@cluster0.d2tc4.mongodb.net/cv-query?retryWrites=true&w=majority
+      - EVENT_SIGN_SECRET=sign-me
+    depends_on:
+      - mongo-projection
+      - mongo-event
 
   gateway:
     build: ./gateway
@@ -104,4 +104,4 @@ volumes:
   mongo-auth-data:
   mongo-user-data:
   mongo-event-data:
-  # mongo-projection-data:
+  mongo-projection-data:
