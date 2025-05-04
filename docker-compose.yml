@@ -1,16 +1,107 @@
 version: '3.8'
-services:
-  service-a:
-    build: ./services/service-a
-    ports:
-      - "5001:5000"
 
-  service-b:
-    build: ./services/service-b
+services:
+
+  # ========== MONGO DATABASES ==========
+  mongo-auth:
+    image: mongo
+    container_name: mongo-auth
     ports:
-      - "5002:5000"
+      - "27017:27017"
+    volumes:
+      - mongo-auth-data:/data/db
+
+  mongo-user:
+    image: mongo
+    container_name: mongo-user
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo-user-data:/data/db
+
+  mongo-event:
+    image: mongo
+    container_name: mongo-event
+    ports:
+      - "27019:27017"
+    volumes:
+      - mongo-event-data:/data/db
+
+  # mongo-projection:
+  #   image: mongo
+  #   container_name: mongo-projection
+  #   ports:
+  #     - "27020:27017"
+  #   volumes:
+  #     - mongo-projection-data:/data/db
+
+  # ========== BACKEND SERVICES ==========
+  auth:
+    build: ./services/auth-service
+    container_name: auth-service
+    ports:
+      - "3001:3000"
+    environment:
+      - MONGO_URI=mongodb+srv://binhminhptit01:w0WNaHQ4faUdniaj@cluster0.d2tc4.mongodb.net/auth-db?retryWrites=true&w=majority
+      - JWT_SECRET=supersecret
+    depends_on:
+      - mongo-auth
+
+  user:
+    build: ./services/user
+    container_name: user
+    ports:
+      - "3002:3000"
+    environment:
+      - MONGO_URI=mongodb+srv://binhminhptit01:w0WNaHQ4faUdniaj@cluster0.d2tc4.mongodb.net/user-db?retryWrites=true&w=majority
+    depends_on:
+      - mongo-user
+
+  cv-command:
+    build: ./services/cv-command
+    container_name: cv-command
+    ports:
+      - "3003:3000"
+    environment:
+      - MONGO_URI=mongodb+srv://binhminhptit01:w0WNaHQ4faUdniaj@cluster0.d2tc4.mongodb.net/cv-command?retryWrites=true&w=majority
+      - EVENT_SIGN_SECRET=sign-me
+    depends_on:
+      - mongo-event
+
+  # cv-query:
+  #   build: ./services/cv-query
+  #   container_name: cv-query
+  #   ports:
+  #     - "3004:3000"
+  #   environment:
+  #     - MONGO_URI=mongodb://mongo-projection:27017/projection-db
+  #     - EVENT_SIGN_SECRET=sign-me
+  #   depends_on:
+  #     - mongo-projection
+  #     - mongo-event
 
   gateway:
     build: ./gateway
+    container_name: gateway
     ports:
-      - "8080:8000"
+      - "3000:3000"
+    depends_on:
+      - auth
+      - user
+      - cv-command
+      # - cv-query
+
+  # ========== FRONTEND ==========
+  # frontend:
+  #   build: ./frontend
+  #   container_name: frontend
+  #   ports:
+  #     - "5173:5173"
+  #   depends_on:
+  #     - gateway
+
+volumes:
+  mongo-auth-data:
+  mongo-user-data:
+  mongo-event-data:
+  # mongo-projection-data:
