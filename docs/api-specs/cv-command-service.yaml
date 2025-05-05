@@ -1,0 +1,385 @@
+openapi: 3.0.0
+info:
+  title: CV Builder Command Service API
+  description: API for handling CV write operations in the CV Builder system
+  version: 1.0.0
+  contact:
+    name: CV Builder Team
+    
+servers:
+  - url: http://cv-command:3000
+    description: CV Command Service
+
+paths:
+  /cv/create:
+    post:
+      summary: Create a new CV
+      description: Creates a new CV with title and template
+      operationId: createCv
+      tags:
+        - CV Write Operations
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - templateId
+              properties:
+                cvId:
+                  type: string
+                  description: Optional client-provided ID
+                  example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                title:
+                  type: string
+                  example: Professional Resume
+                templateId:
+                  type: string
+                  example: modern-template
+      responses:
+        '201':
+          description: CV successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '401':
+          description: Unauthorized
+        '400':
+          description: Invalid input
+        '500':
+          description: Server error
+          
+  /cv/add-section:
+    post:
+      summary: Add a section to CV
+      description: Adds a new section to an existing CV
+      operationId: addSection
+      tags:
+        - CV Write Operations
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - cvId
+                - section
+              properties:
+                cvId:
+                  type: string
+                  example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                section:
+                  $ref: '#/components/schemas/Section'
+      responses:
+        '200':
+          description: Section successfully added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '401':
+          description: Unauthorized
+        '404':
+          description: CV not found
+        '500':
+          description: Server error
+          
+  /cv/update-section:
+    post:
+      summary: Update a CV section
+      description: Updates an existing section in a CV
+      operationId: updateSection
+      tags:
+        - CV Write Operations
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - cvId
+                - section
+              properties:
+                cvId:
+                  type: string
+                  example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                section:
+                  $ref: '#/components/schemas/Section'
+      responses:
+        '200':
+          description: Section successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '401':
+          description: Unauthorized
+        '404':
+          description: CV or section not found
+        '500':
+          description: Server error
+          
+  /cv/remove-section:
+    post:
+      summary: Remove a section from CV
+      description: Removes a section from an existing CV
+      operationId: removeSection
+      tags:
+        - CV Write Operations
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - cvId
+                - sectionId
+              properties:
+                cvId:
+                  type: string
+                  example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                sectionId:
+                  type: string
+                  example: section-123
+      responses:
+        '200':
+          description: Section successfully removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '401':
+          description: Unauthorized
+        '404':
+          description: CV or section not found
+        '500':
+          description: Server error
+          
+  /cv/rename:
+    post:
+      summary: Rename a CV
+      description: Changes the title of an existing CV
+      operationId: renameCv
+      tags:
+        - CV Write Operations
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - cvId
+                - newTitle
+              properties:
+                cvId:
+                  type: string
+                  example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                newTitle:
+                  type: string
+                  example: Updated Professional Resume
+      responses:
+        '200':
+          description: CV successfully renamed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '401':
+          description: Unauthorized
+        '404':
+          description: CV not found
+        '500':
+          description: Server error
+          
+  /cv/change-template:
+    post:
+      summary: Change CV template
+      description: Updates the template used for a CV
+      operationId: changeTemplate
+      tags:
+        - CV Write Operations
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - cvId
+                - templateId
+              properties:
+                cvId:
+                  type: string
+                  example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                templateId:
+                  type: string
+                  example: minimal-template
+      responses:
+        '200':
+          description: Template successfully changed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '401':
+          description: Unauthorized
+        '404':
+          description: CV not found
+        '500':
+          description: Server error
+          
+  /cv/undo:
+    post:
+      summary: Undo last CV change
+      description: Removes the most recent event for a CV
+      operationId: undoCvChange
+      tags:
+        - CV Write Operations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - cvId
+              properties:
+                cvId:
+                  type: string
+                  example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+      responses:
+        '200':
+          description: Last change successfully undone
+        '404':
+          description: No events to undo
+        '500':
+          description: Server error
+          
+  /cv/{cvId}/preview:
+    get:
+      summary: Preview CV from events
+      description: Rebuilds and returns a CV from its event stream
+      operationId: previewCv
+      tags:
+        - CV Write Operations
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cvId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: CV successfully rebuilt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CvProjection'
+        '401':
+          description: Unauthorized
+        '404':
+          description: CV not found
+        '500':
+          description: Server error
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Event:
+      type: object
+      required:
+        - eventType
+        - cvId
+        - userId
+        - payload
+        - signature
+      properties:
+        eventType:
+          type: string
+          enum: [CV_CREATED, SECTION_ADDED, SECTION_UPDATED, SECTION_REMOVED, CV_RENAMED, TEMPLATE_CHANGED]
+          example: CV_CREATED
+        cvId:
+          type: string
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        userId:
+          type: string
+          example: 60d21b4667d0d8992e610c85
+        payload:
+          type: object
+          example: {"title": "Professional Resume", "templateId": "modern-template"}
+        signature:
+          type: string
+          example: 8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92
+        createdAt:
+          type: string
+          format: date-time
+    Section:
+      type: object
+      required:
+        - id
+        - type
+        - content
+      properties:
+        id:
+          type: string
+          example: section-123
+        type:
+          type: string
+          enum: [personal, education, experience, skills, projects, languages]
+          example: experience
+        title:
+          type: string
+          example: Work Experience
+        content:
+          type: object
+          example: {"company": "Acme Inc.", "position": "Senior Developer", "duration": "2018-2021"}
+    CvProjection:
+      type: object
+      required:
+        - cvId
+        - title
+        - templateId
+        - userId
+        - blocks
+      properties:
+        cvId:
+          type: string
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        title:
+          type: string
+          example: Professional Resume
+        templateId:
+          type: string
+          example: modern-template
+        userId:
+          type: string
+          example: 60d21b4667d0d8992e610c85
+        blocks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Section'

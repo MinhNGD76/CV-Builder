@@ -1,0 +1,180 @@
+openapi: 3.0.0
+info:
+  title: CV Builder Query Service API
+  description: API for handling CV read operations in the CV Builder system
+  version: 1.0.0
+  contact:
+    name: CV Builder Team
+    
+servers:
+  - url: http://cv-query:3000
+    description: CV Query Service
+
+paths:
+  /cv/list:
+    get:
+      summary: List all user CVs
+      description: Lists all CVs belonging to the authenticated user
+      operationId: listCvs
+      tags:
+        - CV Read Operations
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of CV metadata
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    cvId:
+                      type: string
+                      example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                    title:
+                      type: string
+                      example: Professional Resume
+                    templateId:
+                      type: string
+                      example: modern-template
+                    updatedAt:
+                      type: string
+                      format: date-time
+        '401':
+          description: Unauthorized
+        '500':
+          description: Server error
+          
+  /cv/{cvId}:
+    get:
+      summary: Get CV by ID
+      description: Retrieves a specific CV by its ID
+      operationId: getCvById
+      tags:
+        - CV Read Operations
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cvId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: CV successfully retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cv'
+        '401':
+          description: Unauthorized
+        '404':
+          description: CV not found
+        '500':
+          description: Server error
+          
+  /cv/sync-event:
+    post:
+      summary: Sync event from Command service
+      description: Applies a new event to update the CV projection
+      operationId: syncEvent
+      tags:
+        - CV Sync Operations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - eventType
+                - cvId
+                - userId
+                - payload
+              properties:
+                eventType:
+                  type: string
+                  enum: [CV_CREATED, SECTION_ADDED, SECTION_UPDATED, SECTION_REMOVED, CV_RENAMED, TEMPLATE_CHANGED]
+                  example: CV_CREATED
+                cvId:
+                  type: string
+                  example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                userId:
+                  type: string
+                  example: 60d21b4667d0d8992e610c85
+                payload:
+                  type: object
+                  example: {"title": "Professional Resume", "templateId": "modern-template"}
+      responses:
+        '200':
+          description: Event successfully applied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cv'
+        '400':
+          description: Invalid event data
+        '500':
+          description: Server error
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Cv:
+      type: object
+      required:
+        - cvId
+        - userId
+        - title
+        - templateId
+        - blocks
+      properties:
+        cvId:
+          type: string
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        userId:
+          type: string
+          example: 60d21b4667d0d8992e610c85
+        title:
+          type: string
+          example: Professional Resume
+        templateId:
+          type: string
+          example: modern-template
+        blocks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Block'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Block:
+      type: object
+      required:
+        - id
+        - type
+        - content
+      properties:
+        id:
+          type: string
+          example: section-123
+        type:
+          type: string
+          enum: [personal, education, experience, skills, projects, languages]
+          example: experience
+        title:
+          type: string
+          example: Work Experience
+        content:
+          type: object
+          example: {"company": "Acme Inc.", "position": "Senior Developer", "duration": "2018-2021"}
