@@ -28,7 +28,6 @@ export class CvService {
     const event = new this.eventModel({ eventType, cvId, userId, payload, signature });
     const savedEvent = await event.save();
   
-    // 🟢 Push event sang cv-query
     try {
       await axios.post('http://cv-query:3000/cv/sync-event', {
         eventType,
@@ -48,12 +47,26 @@ export class CvService {
     const lastEvent = await this.eventModel
       .findOne({ cvId })
       .sort({ createdAt: -1 });
-
+  
     if (!lastEvent) throw new NotFoundException('No events to undo');
-
-    return this.eventModel.deleteOne({ _id: lastEvent._id });
+  
+    const result = await this.eventModel.deleteOne({ _id: lastEvent._id });
+  
+    try {
+      await axios.post('http://cv-query:3000/cv/rebuild', { cvId });
+      console.log(`[cv-command] 🔁 Rebuild projection for CV ${cvId} requested`);
+    } catch (err) {
+      console.error(`[cv-command] ❌ Failed to rebuild projection:`, err.message);
+    }
+  
+    return result;
   }
-
+  
+  async getEventsByCvId(cvId: string) {
+    return this.eventModel.find({ cvId }).sort({ createdAt: 1 });
+  }
+  
+  
   async rebuildCvProjection(cvId: string) {
     const events = await this.eventModel.find({ cvId }).sort({ createdAt: 1 }).exec();
   

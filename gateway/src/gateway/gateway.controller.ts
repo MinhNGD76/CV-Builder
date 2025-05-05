@@ -1,4 +1,13 @@
-import { Controller, Post, Get, Body, Res, Param, Req, Put } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Res,
+  Param,
+  Req,
+  Put,
+} from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 
@@ -125,9 +134,12 @@ export class GatewayController {
   }
 
   @Post('cv/undo')
-  async undoCV(@Body() body: any, @Res() res) {
+  async undoCV(@Req() req, @Body() body: any, @Res() res) {
+    const { authorization } = req.headers;
     const { data } = await firstValueFrom(
-      this.http.post('http://cv-command:3000/cv/undo', body),
+      this.http.post('http://cv-command:3000/cv/undo', body, {
+        headers: { Authorization: authorization }, // 🟢 Fix here
+      }),
     );
     return res.send(data);
   }

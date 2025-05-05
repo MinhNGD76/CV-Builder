@@ -1,125 +1,142 @@
-# 🧩 CV Builder - Microservices Architecture with Event Sourcing
+# 🧠 CV Builder Microservices System (Event Sourcing + CQRS)
+
+A modern CV creation and management system that applies **Event Sourcing** and **CQRS** architecture, allowing users to create, edit, and version-control their resumes in a block-based editor (inspired by Google Docs and TopCV).
 
 ---
 
 ## 👥 Team Members
 
-- **Nguyễn Văn A**
-- **Trần Thị B**
-- **Lê Văn C**
+- **Nguyen Van A** – Backend (Auth, CV Command)
+- **Tran Thi B** – Frontend (React, Editor)
+- **Le Van C** – Gateway, Projection, Docker
 
 ---
 
-## 📌 Project Topic
+## ✅ Key Features
 
-**Build a CV Creation Platform** with version control, history tracking, and real-time preview — powered by event sourcing.
-
----
-
-## ⚙️ Technologies Used
-
-- 🧠 **NestJS** — Backend microservices
-- 🎨 **React + Vite** — Frontend UI with Tiptap Editor
-- 📡 **Socket.IO** — Realtime communication (optional)
-- 🍃 **MongoDB** — Event store & projections
-- 🔐 **JWT + Passport** — Authentication
-- 🐳 **Docker + Docker Compose** — Deployment & DevOps
-- 📑 **OpenAPI YAML** — API specifications
+- [x] Register and login with JWT
+- [x] Create new CVs with title and template
+- [x] Add, update, and remove sections using a block-based editor
+- [x] Undo the latest change
+- [x] Replay CV state from the original event stream
+- [x] Store all changes as immutable events
+- [x] View a list of all created CVs by the user
+- [x] Preview CV with template rendering
+- [x] View full CV detail including all blocks
+- [x] Fully decoupled microservices for command/query
 
 ---
 
-## 📁 Folder Structure
+## ⚙️ System Architecture
 
-```
-cv-builder/
-├── README.md
-├── .env.example
-├── docker-compose.yml
-│
-├── docs/
-│   ├── architecture.md
-│   ├── analysis-and-design.md
-│   ├── asset/
-│   └── api-specs/
-│       ├── auth.yaml
-│       ├── user.yaml
-│       ├── cv-command.yaml
-│       └── cv-query.yaml
-│
-├── scripts/
-│   └── init.sh
-│
-├── services/
-│   ├── auth/
-│   ├── user/
-│   ├── cv-command/
-│   ├── cv-query/
-│   └── notification/  # optional
-│
-├── gateway/
-└── frontend/
-```
+**Microservices** structure includes:
+
+| Service       | Responsibility                          | Tech Stack         |
+|---------------|------------------------------------------|--------------------|
+| `auth`        | User authentication and JWT issuance     | NestJS + MongoDB   |
+| `user`        | User profile management                  | NestJS + MongoDB   |
+| `cv-command`  | Append-only event storage (CV actions)   | NestJS + MongoDB   |
+| `cv-query`    | Read model projection from events        | NestJS + MongoDB   |
+| `gateway`     | API Gateway routing frontend calls       | NestJS + Axios     |
+| `frontend`    | Block-based resume editor and UI         | React + Vite       |
+
+---
+
+## 🔁 Data Flow (CQRS + Event Sourcing)
+
+1. User sends API request to `gateway`
+2. `cv-command` emits events and stores them in MongoDB
+3. `cv-command` pushes events to `cv-query` via internal REST call
+4. `cv-query` updates the projection (read model)
+5. `frontend` fetches final data from `cv-query` through read APIs
+
+---
+
+## 🧱 Architecture Diagram
+
+\`\`\`txt
+               +------------+
+               |  Frontend  |
+               |  (React)   |
+               +-----+------+
+                     |
+                     v
+              +-------------+
+              |  Gateway    |
+              |  (NestJS)   |
+              +--+---+---+--+
+                 |   |   |
+                 v   v   v
+         +-------+ +-----+ +----------+
+         | Auth  | | User| | CV-Command|
+         +-------+ +-----+ +----------+
+                                  |
+                            [Events MongoDB]
+                                  |
+                                  v
+                          +----------------+
+                          |   CV-Query     |
+                          |  (Projection)  |
+                          +----------------+
+\`\`\`
 
 ---
 
 ## 🚀 Getting Started
 
-1. **Clone this repository**
+\`\`\`bash
+# Clone the repository
+git clone <repo>
 
-   ```bash
-   git clone https://github.com/your-username/cv-builder.git
-   cd cv-builder
-   ```
+# Run all services
+docker-compose up --build
 
-2. **Copy environment variables**
-
-   ```bash
-   cp .env.example .env
-   ```
-
-3. **Start all services**
-
-   ```bash
-   docker-compose up --build
-   ```
+# Default ports:
+# - Gateway: http://localhost:3000
+# - Auth: http://localhost:3001
+# - User: http://localhost:3002
+# - CV Command: http://localhost:3003
+# - CV Query: http://localhost:3004
+\`\`\`
 
 ---
 
-## 🧪 Development Notes
+## 📬 Main API Endpoints (via gateway)
 
-- Use `docs/api-specs/*.yaml` to define APIs (OpenAPI format).
-- Use event replay logic to rebuild CV projections.
-- Use signature-based event integrity checks for security.
+| Method | Endpoint              | Description                  |
+|--------|-----------------------|------------------------------|
+| POST   | `/auth/register`      | Register new user            |
+| POST   | `/auth/login`         | Login and receive JWT        |
+| POST   | `/user/me`            | Create personal profile      |
+| GET    | `/user/me`            | Fetch user profile           |
+| POST   | `/cv/create`          | Create a new CV              |
+| POST   | `/cv/add-section`     | Add a section to CV          |
+| POST   | `/cv/rename`          | Rename a CV                  |
+| GET    | `/cv/list`            | List all user's CVs          |
+| GET    | `/cv/:id`             | View full details of a CV    |
+| POST   | `/cv/:id/replay`      | Replay CV state from events  |
+
+
+## 📚 Technologies Used
+
+- 🧱 Microservices Architecture
+- 📦 MongoDB with Event Store modeling
+- 🧠 Event Sourcing + CQRS pattern
+- 🔐 JWT Authentication and Guards
+- 🔄 Projection and Event Replay
+- 🐳 Docker + Docker Compose
+- ⚡ React + Vite + Block Editor
+
+---
+
+## 📎 Notes
+
+- Currently using REST to sync events from `cv-command` to `cv-query`
+- Easy to upgrade to Kafka or other message queues in future
+- Can integrate Elasticsearch for advanced search and indexing
 
 ---
 
-## 🧭 System Highlights
+## 📄 License
 
-- ✅ **CV creation and editing** via event sourcing
-- 🔁 **Replayable event log** with signature verification
-- 🔍 **Version history** & `GET /cv/:id/version/:n` to view snapshots
-- 🔐 **JWT-based login & user isolation**
-- 📄 **Multiple CV templates**
-- 📡 **Realtime projection rebuilding** (WebSocket-ready)
-
----
-
-## 📚 Recommended Tasks
-
-- [ ] Document system design in `docs/architecture.md`
-- [ ] Define API schemas in `docs/api-specs/`
-- [ ] Implement more event types: `SECTION_UPDATED`, `CV_RENAMED`, etc.
-- [ ] Add undo/redo capability via event replay
-
----
-
-## 👩‍🏫 Assignment Submission
-
-Make sure:
-- `README.md` explains project structure and usage clearly
-- Team member contributions are listed
-- Project is runnable with: `docker-compose up --build`
-
-
-
----
+This project is for educational purposes. Built with ❤️ by our team.
