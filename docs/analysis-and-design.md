@@ -3,111 +3,112 @@
 - Hoàng Trọng Khôi - B21DCVT026
 - Nguyễn Đình Minh - B21DCCN086
 
-# 📊 CV Builder System - Service-Oriented Analysis
+# 📊 CV Builder System - Service-Oriented Analysis & Design
 
-## 1. 🎯 Business Process Description
+## 1. 🎯 Problem Statement
 
-A CV builder platform designed for professionals and job seekers to create, manage, and version control their resumes with a Google Docs-like experience. The system allows users to build professional CVs using customizable sections and export them in various templates.
+Our system addresses the need for a professional CV builder platform designed for job seekers and professionals to create, manage, and version control their resumes with a document-editing experience similar to Google Docs. Users need to create professional CVs without design expertise, track version history, maintain consistent formatting, and reduce time spent on CV organization.
 
 **Target Users**: 
-- Job seekers
-- Students entering the job market
+- Job seekers and students entering the job market
 - Career professionals updating their credentials
 - HR departments helping candidates prepare resumes
 
 **Business Value**:
-- Allows users to create professional CVs without design expertise
-- Provides version history tracking for all changes
-- Enables consistent CV formatting across templates
-- Reduces time spent on CV formatting and organization
+- Easy creation of professional CVs without design expertise
+- Complete version history tracking for all changes
+- Consistent CV formatting across multiple templates
+- Significant time savings on CV formatting and organization
 
-## 2. 🔄 Detailed Business Process Steps
+## 2. 🧩 Service-Oriented Analysis
 
+### Main Process Steps
 1. **User Account Management**:
-   - User registers with email and password
-   - User logs in with credentials
-   - System generates and issues JWT token
-   - User manages personal profile information
+   - User registration and authentication with email/password
+   - JWT token issuance for security
+   - Profile management for personal information
 
 2. **CV Creation and Management**:
-   - User initiates creation of a new CV with title and template selection
-   - System assigns unique identifier (cvId) to the CV
-   - System records CV creation as an event with timestamp and signature
-   - User can list and select from their created CVs
+   - New CV creation with title and template selection
+   - Unique identifier assignment for each CV
+   - CV creation events recording with timestamps and signatures
+   - User's CV listing and selection
 
 3. **CV Content Editing**:
-   - User adds different section blocks (personal info, education, experience)
-   - User updates existing content in sections
-   - User removes unwanted sections
-   - User renames CV title as needed
-   - User changes CV template as desired
-   - System captures each change as a discrete signed event
+   - Adding various section blocks (personal info, education, experience)
+   - Updating existing section content
+   - Removing unwanted sections
+   - Renaming CV titles and changing templates
+   - Capturing each change as a discrete signed event
 
 4. **Version Management**:
-   - System logs each content change event with timestamp and user ID
-   - Events are stored with cryptographic signatures for integrity
-   - System allows reconstruction of CV state from event stream
-   - User can undo recent changes as needed
+   - Logging content change events with timestamps
+   - Storing events with cryptographic signatures for integrity
+   - Reconstructing CV state from event stream
+   - Enabling undo functionality for recent changes *(Note: Undo and version rollback features are currently in development and not yet functional)*
 
 5. **CV Access and Viewing**:
-   - User can view their CV with applied template
-   - System reconstructs CV state from stored events
-   - User can access their CV via unique URL
+   - Viewing CVs with applied templates
+   - Accessing CVs via unique URLs
 
-## 3. 📋 Business Process Components Identification
+### Entities Involved
+- Users (authentication credentials)
+- User Profiles (personal information)
+- CVs (metadata and structure)
+- CV Sections/Blocks (content components)
+- Events (change history)
+- Templates (formatting options)
 
-Based on the detailed business process steps, we identify the following key components:
+### Microservices Drivers
+- **Separation**: Different aspects of the system have distinct responsibilities
+- **Scalability Requirements**: Different components may need to scale independently
+- **Domain Complexity**: CV editing and versioning logic is complex and benefits from isolation
+- **Read/Write Pattern Differences**: Command operations (edits) and query operations (views) have different patterns
+- **Data Integrity**: Full audit trail required for all changes
 
-### User Management Components
-- **User Authentication**: Manages user registration, login, and JWT issuance
-- **User Profile Management**: Stores and updates user profile information
+## 3. 🔄 Service-Oriented Design
 
-### CV Management Components
-- **Command Processing**: Handles CV write operations (create, update, delete)
-- **Event Storage**: Persists CV change events with signatures
-- **Query Processing**: Reconstructs CV state from events for reading
-- **Gateway Routing**: Routes requests to appropriate services
+### Service Candidates
 
-### CV Editing Components
-- **Section Creation**: Adds new sections to CV
-- **Section Updating**: Modifies existing section content
-- **Section Removal**: Deletes sections from CV
-- **CV Metadata Management**: Handles title changes and template selection
+1. **Auth Service**:
+   - Responsibility: Handles user authentication and security
+   - Functions: User registration, login, and JWT token management
 
-### Version Control Components
-- **Event Logging**: Records all modifications as signed events
-- **Event Sourcing**: Uses event stream as source of truth
-- **State Reconstruction**: Rebuilds CV state from chronological events
+2. **User Service**:
+   - Responsibility: Manages user profile information
+   - Functions: Store, retrieve, and update user biographical data
 
-## 4. 🧩 Service Candidate Identification
+3. **CV-Command Service**:
+   - Responsibility: Processes all CV write operations as events
+   - Functions: Create CVs, manage sections, handle template changes, store event history
 
-From the business process components, we identify the following service candidates that align with our architecture:
+4. **CV-Query Service**:
+   - Responsibility: Handles read operations for CVs
+   - Functions: Reconstruct CVs from events, serve current CV state to clients
 
-### Core Services
-- **Auth Service**: Handles user authentication and security
-- **User Service**: Manages user profile information
-- **CV-Command Service**: Processes all CV write operations as events
-- **CV-Query Service**: Handles read operations by reconstructing CV state
-- **Gateway Service**: Routes client requests to appropriate backend services
-- **Frontend Application**: Provides the user interface for interacting with the system
+5. **Gateway Service**:
+   - Responsibility: Routes client requests to appropriate backend services
+   - Functions: API routing, authentication header forwarding, centralized endpoint access
 
-## 5. 🔍 Service Capability Analysis
+6. **Frontend Application**:
+   - Responsibility: Provides the user interface
+   - Functions: CV editor, template preview, authentication UI
 
-For each identified service, we analyze its specific capabilities:
+### Service Capabilities
 
-### Auth Service
+#### Auth Service
 - Process user registration with email and password
 - Authenticate user login and issue JWT tokens
 - Secure password storage with hashing algorithms
 - Validate JWT tokens for protected operations
 
-### User Service
+#### User Service
 - Store and retrieve user profile information
 - Manage user biographical data (name, avatar, bio)
 - Associate profiles with authenticated users
 - Update user profile details
 
-### CV-Command Service
+#### CV-Command Service
 - Process CV creation with title and template selection
 - Handle section addition to existing CVs
 - Process section update operations
@@ -115,52 +116,50 @@ For each identified service, we analyze its specific capabilities:
 - Support CV renaming operations
 - Handle template changes
 - Sign and store events in the event store
-- Provide undo capability for recent operations
+- Provide undo capability for recent operations *(Note: Undo functionality is currently in development)*
 
-### CV-Query Service
+#### CV-Query Service
 - Read events from event store
 - Rebuild CV projections from event stream
 - Serve current CV state to clients
-- Support versioned CV views
+- Support versioned CV views *(Note: Version rollback feature is currently in development)*
 - Maintain optimized read models
 
-### Gateway Service
+#### Gateway Service
 - Route incoming requests to appropriate services
 - Forward authentication headers to services
 - Centralize API endpoint access
 - Provide uniform interface to clients
 
-### Frontend Application
+#### Frontend Application
 - Present intuitive user interface
 - Offer block-based CV editor
 - Show real-time CV preview with templates
 - Handle user authentication flows
 - Communicate with backend via Gateway
 
-## 6. 💼 Service Interaction Analysis
+### Service Interactions
 
-The business processes require the following service interactions:
-
-### User Authentication Flow
+#### User Authentication Flow
 1. Frontend collects credentials
 2. Gateway routes authentication request to Auth Service
 3. Auth Service validates credentials and issues JWT
 4. Frontend stores JWT for subsequent requests
 
-### User Profile Management Flow
+#### User Profile Management Flow
 1. Frontend sends profile data with JWT
 2. Gateway validates JWT and routes to User Service
 3. User Service creates or updates profile
 4. User Service returns updated profile data
 
-### CV Creation Flow
+#### CV Creation Flow
 1. Frontend sends CV creation request with JWT
 2. Gateway routes request to CV-Command Service
 3. CV-Command Service validates request
 4. CV-Command Service emits CV_CREATED event
 5. CV-Command Service returns success response
 
-### CV Editing Flow
+#### CV Editing Flow
 1. Frontend sends section modification with JWT
 2. Gateway routes to CV-Command Service
 3. CV-Command Service emits appropriate event (SECTION_ADDED, SECTION_UPDATED, etc.)
@@ -168,103 +167,37 @@ The business processes require the following service interactions:
 5. CV-Query Service detects new event
 6. CV-Query Service updates its projection
 
-### CV Viewing Flow
+#### CV Viewing Flow
 1. Frontend requests CV data with JWT
 2. Gateway routes to CV-Query Service
 3. CV-Query Service retrieves projection
 4. CV-Query Service returns CV data to client
 
-## 7. 📝 Service Contract Definition
+### Data Ownership
 
-For each service, we define its primary interface contracts:
+#### Auth Service
+- Owns: `users` collection
+  - User credentials (email, hashed password)
 
-### Auth Service
-- **POST /auth/register**: Register new user with email and password
-- **POST /auth/login**: Authenticate user and return JWT token
+#### User Service
+- Owns: `profiles` collection
+  - User profile data (userId, fullName, avatarUrl, bio)
 
-### User Service
-- **POST /user/me**: Create user profile with userId, fullName, avatarUrl, bio
-- **GET /user/me**: Retrieve current user profile
-- **PUT /user/me**: Update user profile information
+#### CV-Command Service
+- Owns: `events` collection
+  - Event records (eventType, cvId, userId, payload, timestamp, signature)
 
-### CV-Command Service
-- **POST /cv/create**: Create new CV with title and templateId
-- **POST /cv/add-section**: Add new section to CV
-- **POST /cv/update-section**: Update existing section
-- **POST /cv/remove-section**: Remove section from CV
-- **POST /cv/rename**: Change CV title
-- **POST /cv/change-template**: Update CV template
-- **POST /cv/undo**: Undo last change to CV
-- **GET /cv/:cvId/preview**: Get reconstructed CV for preview
+#### CV-Query Service
+- Owns: `cvs` collection (projection)
+  - CV projections (cvId, userId, title, templateId, blocks)
 
-### CV-Query Service
-- **GET /cv/:id**: Get current state of CV
-- **GET /cv/:id/history**: Get event history of CV
-- **GET /cv/:id/version/:versionNumber**: Get specific version of CV
+## 4. API Specs
 
-### Gateway Service
-- Routes all endpoint requests to appropriate services
-- Passes authentication headers to protected services
-
-## 8. 🗃️ Service Data Requirements
-
-Each service requires specific data structures that align with our architecture:
-
-### Auth Service
-- **Collection**: `users`
-- Fields:
-  - `email`: string
-  - `password`: hashed string
-
-### User Service
-- **Collection**: `profiles`
-- Fields:
-  - `userId`: string (reference to auth user)
-  - `fullName`: string
-  - `avatarUrl`: string
-  - `bio`: string (optional)
-
-### CV-Command Service
-- **Collection**: `events`
-- Fields:
-  - `eventType`: string (CV_CREATED, SECTION_ADDED, etc.)
-  - `cvId`: string
-  - `userId`: string
-  - `payload`: object (varies by event type)
-  - `timestamp`: datetime
-  - `signature`: string (HMAC)
-
-### CV-Query Service
-- **Collection**: `cvs` (projection)
-- Fields:
-  - `cvId`: string
-  - `userId`: string
-  - `title`: string
-  - `templateId`: string
-  - `blocks`: array of section objects
-
-## 9. ✅ Service-Oriented Analysis Summary
-
-1. **Auth Service**: Handles user registration, login, and JWT generation
-2. **User Service**: Manages user profile information
-3. **CV-Command Service**: Processes write operations using event sourcing
-4. **CV-Query Service**: Handles read operations by building projections from events
-5. **API Gateway**: Routes requests to appropriate services
-6. **Frontend**: Provides user interface for the system
-
-These services are designed to work together using:
-- REST APIs for synchronous communication
-- Event sourcing for CV state management and history
-- JWT-based authentication for security
-- Microservice architecture with separate databases
-- Docker containerization for deployment
-
-This service-oriented architecture provides:
-- Separation of read and write concerns (CQRS pattern)
-- Complete audit trail via event sourcing
-- Scalable and maintainable microservices
-- Secure and robust authentication
-- Flexibility for future enhancements
+Complete API specifications are available in the following files:
+- Auth Service API: `docs/api-specs/auth-service.yaml`
+- User Service API: `docs/api-specs/user-service.yaml`
+- CV-Command Service API: `docs/api-specs/cv-command-service.yaml`
+- CV-Query Service API: `docs/api-specs/cv-query-service.yaml`
 
 ---
 

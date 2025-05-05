@@ -42,6 +42,7 @@ This CV Builder system is designed using **microservices architecture** to provi
     - **CvService**: Implements event emission and signature
     - **EventSchema**: Defines event data structure
     - **JwtAuthGuard**: Ensures authenticated access
+  - **Note**: The undo functionality is currently in development and not yet functional
 
 - **CV-Query Service**:
   - Handles **read operations** by building projections from event stream
@@ -51,6 +52,7 @@ This CV Builder system is designed using **microservices architecture** to provi
     - **CvQueryService**: Rebuilds CV state from events
     - **ProjectionSchema**: Defines the read model structure
     - **EventConsumer**: Listens for new events to update projections
+  - **Note**: The version history and rollback features are currently in development and not yet functional
 
 - **API Gateway**:
   - Routes requests to internal services based on path
@@ -201,6 +203,8 @@ This CV Builder system is designed using **microservices architecture** to provi
 4. CV-Command validates, signs and persists event
 5. Command acknowledgment returns to Frontend
 
+**Note**: The undo functionality shown in the API is currently in development and not yet functional.
+
 ### CV Query Flow (Read Path)
 
 ```
@@ -306,3 +310,5 @@ This architecture provides:
 - **Docker Containerization**: Consistent deployment across environments
 - **JWT Security**: Token-based authentication for all requests
 - **MongoDB Persistence**: Flexible document storage for all services
+
+**Implementation Note**: The undo and version rollback features described in the architecture are currently in development and not yet functional. These features will be added in future releases.
