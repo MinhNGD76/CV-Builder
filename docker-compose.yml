@@ -89,16 +89,15 @@ services:
       - auth
       - user
       - cv-command
-      # - cv-query
+      - cv-query
 
-  # ========== FRONTEND ==========
-  # frontend:
-  #   build: ./frontend
-  #   container_name: frontend
-  #   ports:
-  #     - "5173:5173"
-  #   depends_on:
-  #     - gateway
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - gateway
 
 volumes:
   mongo-auth-data:
