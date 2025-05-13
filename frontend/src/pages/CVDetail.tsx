@@ -32,6 +32,7 @@ const CVDetail = () => {
   const [newSectionTitle, setNewSectionTitle] = useState('');
   const [isAddingSectionVisible, setIsAddingSectionVisible] = useState(false);
   const [operationInProgress, setOperationInProgress] = useState(false);
+  const [newSectionType, setNewSectionType] = useState('text');
   
   // Using useCallback to memoize the fetchCV function
   const fetchCV = useCallback(async () => {
@@ -180,10 +181,44 @@ const CVDetail = () => {
     }
   };
 
+  // Section type options
+  const sectionTypes = [
+    { value: 'personal', label: 'Personal Information' },
+    { value: 'education', label: 'Education' },
+    { value: 'experience', label: 'Work Experience' },
+    { value: 'skills', label: 'Skills' },
+    { value: 'projects', label: 'Projects' },
+    { value: 'languages', label: 'Languages' },
+    { value: 'certificates', label: 'Certifications' },
+    { value: 'interests', label: 'Interests' },
+    { value: 'references', label: 'References' },
+    { value: 'text', label: 'Custom Section' }
+  ];
+
+  // Function to get a default section title based on type
+  const getDefaultSectionTitle = (type: string): string => {
+    switch(type) {
+      case 'personal': return 'Personal Information';
+      case 'education': return 'Education';
+      case 'experience': return 'Work Experience';
+      case 'skills': return 'Skills';
+      case 'projects': return 'Projects';
+      case 'languages': return 'Languages';
+      case 'certificates': return 'Certifications';
+      case 'interests': return 'Interests';
+      case 'references': return 'References';
+      default: return '';
+    }
+  };
+
+  // Update the handleAddSection function to include section type
   const handleAddSection = async () => {
-    if (!id || !newSectionTitle.trim() || operationInProgress) return;
+    if (!id || (!newSectionTitle.trim() && newSectionType === 'text') || operationInProgress) return;
     
     setOperationInProgress(true);
+    
+    // Use either the custom title or the default title for the section type
+    const sectionTitle = newSectionTitle.trim() || getDefaultSectionTitle(newSectionType);
     
     try {
       const token = localStorage.getItem('token');
@@ -195,9 +230,9 @@ const CVDetail = () => {
       // Create a temporary section to show in UI while waiting for API response
       const tempSection: Section = {
         id: generateId(),
-        title: newSectionTitle.trim(),
+        title: sectionTitle,
         content: '',
-        type: 'text'
+        type: newSectionType
       };
       
       // Optimistically update UI
@@ -209,8 +244,9 @@ const CVDetail = () => {
       }
       
       const response = await addSection(id, { 
-        title: newSectionTitle.trim(), 
-        content: '' 
+        title: sectionTitle, 
+        content: '',
+        type: newSectionType
       }, token);
       
       if ('error' in response) {
@@ -219,6 +255,7 @@ const CVDetail = () => {
         fetchCV();
       } else {
         setNewSectionTitle('');
+        setNewSectionType('text');
         setIsAddingSectionVisible(false);
         // Refresh to get server-generated IDs
         fetchCV();
@@ -462,20 +499,82 @@ const CVDetail = () => {
           {isAddingSectionVisible && (
             <div className="mb-6 p-4 border border-dashed border-gray-300 rounded-lg">
               <h4 className="text-sm font-medium text-gray-700 mb-2">Add New Section</h4>
-              <div className="flex">
-                <input
-                  type="text"
-                  value={newSectionTitle}
-                  onChange={(e) => setNewSectionTitle(e.target.value)}
-                  placeholder="Section Title"
-                  className="flex-grow border border-gray-300 rounded-l px-3 py-2"
-                />
+              
+              <div className="mb-3">
+                <label htmlFor="section-type" className="block text-sm font-medium text-gray-700 mb-1">
+                  Section Type
+                </label>
+                <select
+                  id="section-type"
+                  value={newSectionType}
+                  onChange={(e) => {
+                    setNewSectionType(e.target.value);
+                    // If user selects a pre-defined type, let's set a default title
+                    if (e.target.value !== 'text' && !newSectionTitle) {
+                      setNewSectionTitle(getDefaultSectionTitle(e.target.value));
+                    }
+                  }}
+                  className="w-full border border-gray-300 rounded px-3 py-2 mb-2"
+                >
+                  {sectionTypes.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              {newSectionType === 'text' && (
+                <div className="mb-3">
+                  <label htmlFor="section-title" className="block text-sm font-medium text-gray-700 mb-1">
+                    Section Title
+                  </label>
+                  <input
+                    type="text"
+                    id="section-title"
+                    value={newSectionTitle}
+                    onChange={(e) => setNewSectionTitle(e.target.value)}
+                    placeholder="Enter section title"
+                    className="w-full border border-gray-300 rounded px-3 py-2"
+                    required={newSectionType === 'text'}
+                  />
+                </div>
+              )}
+              
+              {newSectionType !== 'text' && (
+                <div className="mb-3">
+                  <label htmlFor="section-title" className="block text-sm font-medium text-gray-700 mb-1">
+                    Custom Title (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    id="section-title"
+                    value={newSectionTitle}
+                    onChange={(e) => setNewSectionTitle(e.target.value)}
+                    placeholder={getDefaultSectionTitle(newSectionType)}
+                    className="w-full border border-gray-300 rounded px-3 py-2"
+                  />
+                </div>
+              )}
+              
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAddingSectionVisible(false);
+                    setNewSectionTitle('');
+                    setNewSectionType('text');
+                  }}
+                  className="px-3 py-2 border border-gray-300 text-gray-700 rounded mr-2 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
                 <button
                   onClick={handleAddSection}
-                  disabled={!newSectionTitle.trim() || operationInProgress}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-r hover:bg-blue-700 disabled:opacity-50"
+                  disabled={(newSectionType === 'text' && !newSectionTitle.trim()) || operationInProgress}
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
                 >
-                  Add
+                  Add Section
                 </button>
               </div>
             </div>
