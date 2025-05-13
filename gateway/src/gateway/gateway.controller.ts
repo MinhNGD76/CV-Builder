@@ -42,7 +42,7 @@ export class GatewayController {
         }),
       );
       return res.send(data);
-    } catch (error) {
+    } catch {
       return res.send({ valid: false });
     }
   }
@@ -153,7 +153,7 @@ export class GatewayController {
     const { authorization } = req.headers;
     const { data } = await firstValueFrom(
       this.http.post('http://cv-command:3000/cv/undo', body, {
-        headers: { Authorization: authorization }, // 🟢 Fix here
+        headers: { Authorization: authorization },
       }),
     );
     return res.send(data);
@@ -178,6 +178,22 @@ export class GatewayController {
       this.http.get(`http://cv-query:3000/cv/${id}`, {
         headers: { Authorization: authorization },
       }),
+    );
+    return res.send(data);
+  }
+
+  @Post('cv/rebuild')
+  async rebuild(@Body() body: any, @Res() res) {
+    const { data } = await firstValueFrom(
+      this.http.post('http://cv-query:3000/cv/rebuild', body),
+    );
+    return res.send(data);
+  }
+
+  @Get('cv/:id/version/:version')
+  async getVersion(@Param('id') id: string, @Param('version') version: string, @Res() res) {
+    const { data } = await firstValueFrom(
+      this.http.get(`http://cv-query:3000/cv/${id}/version/${version}`),
     );
     return res.send(data);
   }
