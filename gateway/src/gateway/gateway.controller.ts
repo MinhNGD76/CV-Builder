@@ -182,6 +182,18 @@ export class GatewayController {
     return res.send(data);
   }
 
+  // Add the missing endpoint for getting CV events
+  @Get('cv/event/cv/:id')
+  async getCVEvents(@Param('id') id: string, @Req() req, @Res() res) {
+    const { authorization } = req.headers;
+    const { data } = await firstValueFrom(
+      this.http.get(`http://cv-command:3000/cv/event/cv/${id}`, {
+        headers: { Authorization: authorization },
+      }),
+    );
+    return res.send(data);
+  }
+
   @Post('cv/rebuild')
   async rebuild(@Body() body: any, @Res() res) {
     const { data } = await firstValueFrom(

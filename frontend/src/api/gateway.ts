@@ -385,3 +385,68 @@ export const undoCV = async (cvId: string, token: string): Promise<ApiResponse<C
     return { error: error instanceof Error ? error.message : 'Failed to undo changes' };
   }
 };
+
+// Event type for CV history
+export interface CVEvent {
+  eventType: string;
+  cvId: string;
+  userId: string;
+  payload: Record<string, unknown>;
+  createdAt: string;
+}
+
+export const getCVEvents = async (cvId: string, token: string): Promise<ApiResponse<CVEvent[]>> => {
+  try {
+    const response = await fetch(`${API_URL}/cv/event/cv/${cvId}`, {
+      method: 'GET',
+      headers: headers(token),
+    });
+    return await handleResponse<CVEvent[]>(response);
+  } catch (error) {
+    console.error('Get CV events API error:', error);
+    return { error: error instanceof Error ? error.message : 'Failed to get CV events' };
+  }
+};
+
+export const rebuildToVersion = async (cvId: string, version: number, token: string): Promise<ApiResponse<CV>> => {
+  try {
+    const response = await fetch(`${API_URL}/cv/${cvId}/version/${version}`, {
+      method: 'GET',
+      headers: headers(token),
+    });
+    const data = await handleResponse<CVDetailResponse>(response);
+    
+    // Transform the response to match the CV interface
+    if (data && !('error' in data)) {
+      // Map blocks to sections format for the frontend
+      const sections = Array.isArray(data.blocks) 
+        ? data.blocks.map((block: Block) => ({
+            id: block.id,
+            title: block.title || '',
+            content: block.content || '',
+            type: block.type || 'text'
+          }))
+        : [];
+        
+      const transformedCV: CV = {
+        id: data.cvId || data._id || '',
+        cvId: data.cvId || '',
+        title: data.title || 'Untitled CV',
+        template: data.templateId || 'classic',
+        sections: sections,
+        updatedAt: data.updatedAt || ''
+      };
+      
+      return transformedCV;
+    }
+    
+    if (data && 'error' in data) {
+      return data as { error: string };
+    }
+    
+    return { error: 'Failed to rebuild CV' };
+  } catch (error) {
+    console.error('Rebuild CV API error:', error);
+    return { error: error instanceof Error ? error.message : 'Failed to rebuild CV' };
+  }
+};

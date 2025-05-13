@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getCV, addSection, updateSection, removeSection, renameCV, changeTemplate, undoCV, type Section } from '../api/gateway';
 import SectionEditor from '../components/SectionEditor';
+import HistoryDrawer from '../components/HistoryDrawer';
 
 // Generate a unique ID without requiring the uuid package
 const generateId = (): string => {
@@ -33,6 +34,7 @@ const CVDetail = () => {
   const [isAddingSectionVisible, setIsAddingSectionVisible] = useState(false);
   const [operationInProgress, setOperationInProgress] = useState(false);
   const [newSectionType, setNewSectionType] = useState('text');
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   
   // Using useCallback to memoize the fetchCV function
   const fetchCV = useCallback(async () => {
@@ -178,6 +180,22 @@ const CVDetail = () => {
       setError('Failed to undo last action');
     } finally {
       setOperationInProgress(false);
+    }
+  };
+
+
+  const handleRebuild = async () => {
+    setLoading(true);
+    setError('');
+    
+    try {
+      // Just refresh the page data
+      await fetchCV();
+    } catch (error) {
+      console.error('Error rebuilding CV:', error);
+      setError(error instanceof Error ? error.message : 'Failed to rebuild CV');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -453,6 +471,16 @@ const CVDetail = () => {
           )}
           
           <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setIsHistoryOpen(true)}
+              className="flex items-center px-3 py-1 text-sm border border-gray-300 text-gray-700 rounded hover:bg-gray-50"
+              title="View history"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              History
+            </button>
             <select
               value={selectedTemplate}
               onChange={(e) => setSelectedTemplate(e.target.value)}
@@ -614,6 +642,23 @@ const CVDetail = () => {
           </button>
         </div>
       </div>
+      {/* History Drawer */}
+      {id && (
+        <HistoryDrawer
+          cvId={id}
+          isOpen={isHistoryOpen}
+          onClose={() => setIsHistoryOpen(false)}
+          onRebuild={handleRebuild}
+        />
+      )}
+      
+      {/* Overlay to close drawer when clicking outside */}
+      {isHistoryOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-25 z-10"
+          onClick={() => setIsHistoryOpen(false)}
+        />
+      )}
     </div>
   );
 };
