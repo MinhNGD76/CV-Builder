@@ -6,6 +6,7 @@ import Profile from './pages/Profile';
 import CVCreate from './pages/CVCreate';
 import CVList from './pages/CVList';
 import CVDetail from './pages/CVDetail';
+import CVPreview from './pages/CVPreview';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import LandingPage from './pages/LandingPage';
@@ -71,6 +72,12 @@ function App() {
           <Route path="cv/:id" element={
             <ProtectedRoute isAuthenticated={isAuthenticated} isLoading={isAuthLoading}>
               <CVDetail />
+            </ProtectedRoute>
+          } />
+
+          <Route path="cv/:id/preview" element={
+            <ProtectedRoute isAuthenticated={isAuthenticated} isLoading={isAuthLoading}>
+              <CVPreview />
             </ProtectedRoute>
           } />
           

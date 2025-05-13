@@ -103,3 +103,53 @@ textarea, input[type="text"], input[type="email"], input[type="password"] {
     background-color: transparent;
   }
 }
+
+/* Print styles */
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  
+  body {
+    background-color: white !important;
+    color: black !important;
+  }
+  
+  .print\:hidden {
+    display: none !important;
+  }
+  
+  .print\:p-0 {
+    padding: 0 !important;
+  }
+  
+  .print\:pt-0 {
+    padding-top: 0 !important;
+  }
+  
+  .print\:shadow-none {
+    box-shadow: none !important;
+  }
+  
+  .print\:max-w-none {
+    max-width: none !important;
+  }
+  
+  /* Hide header, navigation, and any control elements */
+  header, nav, button, .fixed, .sticky {
+    display: none !important;
+  }
+  
+  /* Reset all page margins and padding for printing */
+  .pt-24, .pb-12, .px-4 {
+    padding: 0 !important;
+  }
+  
+  /* Ensure the CV template fills the entire page */
+  .max-w-\[210mm\] {
+    max-width: none !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+}
