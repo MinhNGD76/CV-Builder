@@ -67,7 +67,7 @@ const Layout = () => {
                   <Link to="/profile" className="text-gray-700 hover:text-blue-600">Profile</Link>
                   <button 
                     onClick={handleLogout}
-                    className="text-gray-700 hover:text-blue-600"
+                    className="text-gray-700 hover:text-blue-600 bg-transparent"
                   >
                     Logout
                   </button>

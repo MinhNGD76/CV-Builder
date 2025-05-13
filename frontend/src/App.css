@@ -1,8 +1,9 @@
+/* Reset conflicting styles */
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  text-align: left;
 }
 
 .logo {
@@ -18,6 +19,7 @@
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
 
+/* Keep only necessary animations and special effects */
 @keyframes logo-spin {
   from {
     transform: rotate(0deg);
@@ -39,4 +41,26 @@
 
 .read-the-docs {
   color: #888;
+}
+
+/* Ensure buttons in the app have appropriate styling */
+button.bg-blue-600 {
+  background-color: #2563eb !important;
+  color: white !important;
+}
+
+button.bg-green-600 {
+  background-color: #16a34a !important;
+  color: white !important;
+}
+
+button.bg-gray-600 {
+  background-color: #4b5563 !important;
+  color: white !important;
+}
+
+/* For regular buttons */
+button.border-gray-300 {
+  background-color: white !important;
+  color: #374151 !important;
 }

@@ -120,7 +120,7 @@ const SectionEditor: React.FC<SectionEditorProps> = ({ section, onUpdate, onDele
           <div className="p-4">
             <div className="prose max-w-none">
               {content ? (
-                <div className="whitespace-pre-wrap">{content}</div>
+                <div className="whitespace-pre-wrap text-gray-700">{content}</div>
               ) : (
                 <p className="text-gray-400 italic">No content yet. Click edit to add content to this section.</p>
               )}
