@@ -1,26 +1,148 @@
 import { useState } from 'react';
-import { createCV } from '../api/gateway';
 import { useNavigate } from 'react-router-dom';
+import { createCV } from '../api/gateway';
 
-function CVCreate() {
+interface TemplateOption {
+  id: string;
+  name: string;
+  description: string;
+}
+
+const templates: TemplateOption[] = [
+  { 
+    id: 'classic', 
+    name: 'Classic', 
+    description: 'A timeless design suitable for most industries' 
+  },
+  { 
+    id: 'modern', 
+    name: 'Modern', 
+    description: 'A contemporary layout for creative professionals' 
+  },
+  { 
+    id: 'minimal', 
+    name: 'Minimal', 
+    description: 'A clean, simple design with focus on content' 
+  }
+];
+
+const CVCreate = () => {
   const [title, setTitle] = useState('');
+  const [selectedTemplate, setSelectedTemplate] = useState('classic');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
-  const token = localStorage.getItem('token') || '';
-
-  const handleCreate = async () => {
-    const res = await createCV({ title }, token);
-    if (res && res.cvId) {
-      navigate(`/cv/${res.cvId}`);
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!title.trim()) {
+      setError('Please enter a title for your CV');
+      return;
+    }
+    
+    setLoading(true);
+    setError('');
+    
+    try {
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        setError('Authentication token not found. Please log in again.');
+        setLoading(false);
+        return;
+      }
+      
+      const response = await createCV({ title, template: selectedTemplate }, token);
+      
+      if ('error' in response) {
+        setError(response.error);
+      } else if (response.cvId) {
+        navigate(`/cv/${response.cvId}`);
+      } else {
+        setError('Failed to create CV. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error creating CV:', error);
+      setError(error instanceof Error ? error.message : 'An error occurred');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div>
-      <h2>Create New CV</h2>
-      <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="CV Title" />
-      <button onClick={handleCreate}>Create</button>
+    <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
+      <div className="p-8">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Create New CV</h2>
+        
+        {error && (
+          <div className="mb-6 p-4 text-red-700 bg-red-100 rounded-lg">
+            {error}
+          </div>
+        )}
+        
+        <form onSubmit={handleSubmit}>
+          <div className="mb-6">
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+              CV Title
+            </label>
+            <input
+              type="text"
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="My Professional CV"
+              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+            <p className="mt-1 text-sm text-gray-500">
+              Choose a name that helps you identify this CV.
+            </p>
+          </div>
+          
+          <div className="mb-8">
+            <h3 className="text-sm font-medium text-gray-700 mb-3">Select Template</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {templates.map((template) => (
+                <div 
+                  key={template.id}
+                  onClick={() => setSelectedTemplate(template.id)}
+                  className={`
+                    border rounded-lg p-4 cursor-pointer transition
+                    ${selectedTemplate === template.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}
+                  `}
+                >
+                  <div className="h-24 bg-gray-100 mb-3 rounded flex items-center justify-center">
+                    {/* Template preview image would go here */}
+                    {template.name}
+                  </div>
+                  <h4 className="text-sm font-medium">{template.name}</h4>
+                  <p className="text-xs text-gray-500 mt-1">{template.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => navigate('/cv')}
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md mr-3 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+            >
+              {loading ? 'Creating...' : 'Create CV'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
-}
+};
 
 export default CVCreate;

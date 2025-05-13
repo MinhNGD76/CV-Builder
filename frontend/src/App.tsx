@@ -1,25 +1,59 @@
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import Login from './pages/Login';
+import Register from './pages/Register';
 import Profile from './pages/Profile';
 import CVCreate from './pages/CVCreate';
 import CVList from './pages/CVList';
 import CVDetail from './pages/CVDetail';
+import Layout from './components/Layout';
+import ProtectedRoute from './components/ProtectedRoute';
+import LandingPage from './pages/LandingPage';
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    setIsAuthenticated(!!token);
+  }, []);
+
   return (
     <Router>
-      <nav style={{ padding: '1rem' }}>
-        <Link to="/">Home</Link> | <Link to="/login">Login</Link> |{' '}
-        <Link to="/profile">Profile</Link> | <Link to="/cv">CVs</Link>
-      </nav>
-
       <Routes>
-        <Route path="/" element={<h1>Welcome to CV Builder</h1>} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/cv" element={<CVList />} />
-        <Route path="/cv/new" element={<CVCreate />} />
-        <Route path="/cv/:id" element={<CVDetail />} />
+        <Route path="/" element={<Layout />}>
+          <Route index element={<LandingPage />} />
+          <Route path="login" element={<Login onLoginSuccess={() => setIsAuthenticated(true)} />} />
+          <Route path="register" element={<Register />} />
+          
+          {/* Protected routes */}
+          <Route path="profile" element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <Profile />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="cv" element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <CVList />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="cv/new" element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <CVCreate />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="cv/:id" element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <CVDetail />
+            </ProtectedRoute>
+          } />
+          
+          {/* Catch-all redirect */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
       </Routes>
     </Router>
   );

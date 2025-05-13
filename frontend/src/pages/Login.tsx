@@ -1,52 +1,59 @@
-// import { useState } from 'react';
-// import { login } from '../api/gateway';
-
-// function Login() {
-//   const [email, setEmail] = useState('');
-//   const [password, setPassword] = useState('');
-//   const [token, setToken] = useState('');
-
-  // const handleLogin = async () => {
-  //   const res = await login({ email, password });
-  //   if (res.token) {
-  //     setToken(res.token);
-  //     localStorage.setItem('token', res.token);
-  //     alert('Login success!');
-  //   } else {
-  //     alert('Login failed.');
-  //   }
-  // };
-
-//   return (
-//     <div>
-//       <h2>Login</h2>
-//       <input placeholder="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-//       <input placeholder="password" value={password} type="password" onChange={(e) => setPassword(e.target.value)} />
-//       <button onClick={handleLogin}>Login</button>
-//       <p>Token: {token}</p>
-//     </div>
-//   );
-// }
-
-// export default Login;
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { login } from '../api/gateway';
 
-function Login() {
+interface LocationState {
+  message?: string;
+}
+
+interface LoginProps {
+  onLoginSuccess: () => void;
+}
+
+const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const state = location.state as LocationState;
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [, setToken] = useState('');
-  const [errorMessage,] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = async () => {
-    const res = await login({ email, password });
-    if (res.token) {
-      setToken(res.token);
-      localStorage.setItem('token', res.token);
-      alert('Login success!');
-    } else {
-      alert('Login failed.');
+  // Use effect to set success message from location state
+  useEffect(() => {
+    if (state?.message) {
+      setSuccessMessage(state.message);
+    }
+  }, [state]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email || !password) {
+      setErrorMessage('Please enter both email and password');
+      return;
+    }
+    
+    setIsLoading(true);
+    setErrorMessage('');
+    
+    try {
+      const response = await login({ email, password });
+      
+      if ('token' in response && response.token) {
+        localStorage.setItem('token', response.token);
+        onLoginSuccess();
+        navigate('/cv');
+      } else {
+        setErrorMessage('error' in response ? response.error : 'Invalid email or password');
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      setErrorMessage('An error occurred during login');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -54,12 +61,20 @@ function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-white p-6">
       <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg">
         <h2 className="text-3xl font-semibold text-blue-600 mb-6 text-center">Login</h2>
+        
+        {successMessage && (
+          <div className="mb-4 text-green-600 text-center bg-green-50 p-3 rounded">
+            <p>{successMessage}</p>
+          </div>
+        )}
+        
         {errorMessage && (
-          <div className="mb-4 text-red-600 text-center">
+          <div className="mb-4 text-red-600 text-center bg-red-50 p-3 rounded">
             <p>{errorMessage}</p>
           </div>
         )}
-        <form onSubmit={handleLogin}>
+        
+        <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label htmlFor="email" className="block text-gray-700 text-sm font-medium mb-2">
               Email Address
@@ -90,19 +105,12 @@ function Login() {
             />
           </div>
 
-          <div className="flex items-center justify-between mb-6">
-            <div className="text-sm">
-              <Link to="/forgot-password" className="text-blue-600 hover:text-blue-800">
-                Forgot Password?
-              </Link>
-            </div>
-          </div>
-
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-3 rounded-md text-lg font-medium hover:bg-blue-700 transition"
+            disabled={isLoading}
+            className="w-full bg-blue-600 text-white py-3 rounded-md text-lg font-medium hover:bg-blue-700 transition disabled:opacity-50"
           >
-            Login
+            {isLoading ? 'Logging in...' : 'Login'}
           </button>
         </form>
 
