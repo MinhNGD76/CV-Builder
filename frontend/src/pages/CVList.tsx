@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { listCVs } from '../api/gateway';
 
+// Local CV interface that matches what we need for this component
 interface CV {
   id: string;
   title: string;
@@ -31,7 +32,15 @@ const CVList: React.FC = () => {
         if ('error' in data) {
           setError(data.error);
         } else {
-          setCvs(Array.isArray(data) ? data : []);
+          // Convert GatewayCV[] to our local CV[] by ensuring all properties are defined
+          const formattedCVs: CV[] = Array.isArray(data) ? data.map(cv => ({
+            id: cv.id || cv.cvId || '',
+            title: cv.title,
+            template: cv.template || 'classic',
+            updatedAt: cv.updatedAt || ''
+          })) : [];
+          
+          setCvs(formattedCVs);
         }
       } catch (error) {
         console.error("Error fetching CVs:", error);

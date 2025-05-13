@@ -1,14 +1,46 @@
-import { Outlet, Link, useNavigate } from 'react-router-dom';
+import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 
 const Layout = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    setIsLoggedIn(!!token);
-  }, []);
+    const checkAuthStatus = async () => {
+      setIsLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+          setIsLoggedIn(false);
+          setIsLoading(false);
+          return;
+        }
+        
+        // Validate token without using the verifyToken endpoint
+        // Just check if it exists and has the correct format
+        const tokenParts = token.split('.');
+        if (tokenParts.length !== 3) {
+          localStorage.removeItem('token');
+          setIsLoggedIn(false);
+          setIsLoading(false);
+          return;
+        }
+        
+        setIsLoggedIn(true);
+      } catch (error) {
+        console.error('Token validation error:', error);
+        localStorage.removeItem('token');
+        setIsLoggedIn(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    checkAuthStatus();
+  }, [location.pathname]); // Re-check when route changes
   
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -27,7 +59,9 @@ const Layout = () => {
             <nav className="flex items-center space-x-4">
               <Link to="/" className="text-gray-700 hover:text-blue-600">Home</Link>
               
-              {isLoggedIn ? (
+              {isLoading ? (
+                <div className="animate-pulse w-16 h-4 bg-gray-200 rounded"></div>
+              ) : isLoggedIn ? (
                 <>
                   <Link to="/cv" className="text-gray-700 hover:text-blue-600">My CVs</Link>
                   <Link to="/profile" className="text-gray-700 hover:text-blue-600">Profile</Link>

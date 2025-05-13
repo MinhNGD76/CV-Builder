@@ -32,6 +32,21 @@ export class GatewayController {
     return res.send(data);
   }
 
+  @Post('auth/verify')
+  async verifyToken(@Req() req, @Res() res) {
+    const { authorization } = req.headers;
+    try {
+      const { data } = await firstValueFrom(
+        this.http.post('http://auth:3000/auth/verify', {}, {
+          headers: { Authorization: authorization },
+        }),
+      );
+      return res.send(data);
+    } catch (error) {
+      return res.send({ valid: false });
+    }
+  }
+
   // USER -----------------------------
   @Post('user/me')
   async createProfile(@Req() req, @Body() body: any, @Res() res) {

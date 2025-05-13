@@ -36,6 +36,11 @@ const Profile: React.FC = () => {
         
         if ('error' in data) {
           setError(data.error);
+          // If the error is related to invalid token, redirect to login
+          if (data.error.includes('token') || data.error.includes('authentication')) {
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+          }
         } else {
           setProfile(data);
           setFormData({
@@ -71,6 +76,9 @@ const Profile: React.FC = () => {
       
       if (!token) {
         setError('Authentication token not found. Please log in again.');
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 2000);
         return;
       }
       
@@ -78,6 +86,11 @@ const Profile: React.FC = () => {
       
       if ('error' in response) {
         setError(response.error);
+        // If the error is related to invalid token, redirect to login
+        if (response.error.includes('token') || response.error.includes('authentication')) {
+          localStorage.removeItem('token');
+          window.location.href = '/login';
+        }
       } else {
         setProfile(formData);
         setIsEditing(false);

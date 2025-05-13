@@ -26,4 +26,13 @@ export class AuthService {
     const payload = { sub: user._id, email: user.email };
     return { token: await this.jwtService.signAsync(payload) };
   }
+
+  async verifyToken(token: string): Promise<boolean> {
+    try {
+      await this.jwtService.verifyAsync(token);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
 }

@@ -1,28 +1,36 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createCV } from '../api/gateway';
+// Import images
+import classicTemplate from '../assets/templates/classic.png';
+import modernTemplate from '../assets/templates/modern.png';
+import minimalTemplate from '../assets/templates/minimal.png';
 
 interface TemplateOption {
   id: string;
   name: string;
   description: string;
+  previewUrl?: string;
 }
 
 const templates: TemplateOption[] = [
   { 
     id: 'classic', 
     name: 'Classic', 
-    description: 'A timeless design suitable for most industries' 
+    description: 'A timeless design suitable for most industries',
+    previewUrl: classicTemplate
   },
   { 
     id: 'modern', 
     name: 'Modern', 
-    description: 'A contemporary layout for creative professionals' 
+    description: 'A contemporary layout for creative professionals',
+    previewUrl: modernTemplate
   },
   { 
     id: 'minimal', 
     name: 'Minimal', 
-    description: 'A clean, simple design with focus on content' 
+    description: 'A clean, simple design with focus on content',
+    previewUrl: minimalTemplate
   }
 ];
 
@@ -31,6 +39,7 @@ const CVCreate = () => {
   const [selectedTemplate, setSelectedTemplate] = useState('classic');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const navigate = useNavigate();
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,6 +52,7 @@ const CVCreate = () => {
     
     setLoading(true);
     setError('');
+    setSuccess('');
     
     try {
       const token = localStorage.getItem('token');
@@ -50,15 +60,21 @@ const CVCreate = () => {
       if (!token) {
         setError('Authentication token not found. Please log in again.');
         setLoading(false);
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
         return;
       }
       
-      const response = await createCV({ title, template: selectedTemplate }, token);
+      const response = await createCV({ title: title.trim(), template: selectedTemplate }, token);
       
       if ('error' in response) {
         setError(response.error);
       } else if (response.cvId) {
-        navigate(`/cv/${response.cvId}`);
+        setSuccess('CV created successfully! Redirecting to editor...');
+        setTimeout(() => {
+          navigate(`/cv/${response.cvId}`);
+        }, 1000);
       } else {
         setError('Failed to create CV. Please try again.');
       }
@@ -78,6 +94,12 @@ const CVCreate = () => {
         {error && (
           <div className="mb-6 p-4 text-red-700 bg-red-100 rounded-lg">
             {error}
+          </div>
+        )}
+        
+        {success && (
+          <div className="mb-6 p-4 text-green-700 bg-green-100 rounded-lg">
+            {success}
           </div>
         )}
         
@@ -113,8 +135,15 @@ const CVCreate = () => {
                   `}
                 >
                   <div className="h-24 bg-gray-100 mb-3 rounded flex items-center justify-center">
-                    {/* Template preview image would go here */}
-                    {template.name}
+                    {template.previewUrl ? (
+                      <img 
+                        src={template.previewUrl} 
+                        alt={template.name}
+                        className="h-full w-full object-cover rounded"
+                      />
+                    ) : (
+                      <span className="text-gray-500">{template.name}</span>
+                    )}
                   </div>
                   <h4 className="text-sm font-medium">{template.name}</h4>
                   <p className="text-xs text-gray-500 mt-1">{template.description}</p>
@@ -128,6 +157,7 @@ const CVCreate = () => {
               type="button"
               onClick={() => navigate('/cv')}
               className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md mr-3 hover:bg-gray-50"
+              disabled={loading}
             >
               Cancel
             </button>

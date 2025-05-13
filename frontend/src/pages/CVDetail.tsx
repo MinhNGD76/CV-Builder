@@ -1,10 +1,19 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getCV, addSection, updateSection, removeSection, renameCV, changeTemplate, undoCV } from '../api/gateway';
-import SectionEditor, { type Section } from '../components/SectionEditor';
+import { getCV, addSection, updateSection, removeSection, renameCV, changeTemplate, undoCV, type Section } from '../api/gateway';
+import SectionEditor from '../components/SectionEditor';
 
+// Generate a unique ID without requiring the uuid package
+const generateId = (): string => {
+  // Simple implementation that should work for our purposes
+  return 'temp-' + Math.random().toString(36).substring(2, 15) + 
+         Math.random().toString(36).substring(2, 15);
+};
+
+// Local CV interface that matches what we need for this component
 interface CV {
-  id: string;
+  id?: string;
+  cvId?: string;
   title: string;
   template: string;
   sections: Section[];
@@ -24,8 +33,6 @@ const CVDetail = () => {
   const [isAddingSectionVisible, setIsAddingSectionVisible] = useState(false);
   const [operationInProgress, setOperationInProgress] = useState(false);
   
-  const token = localStorage.getItem('token') || '';
-
   // Using useCallback to memoize the fetchCV function
   const fetchCV = useCallback(async () => {
     if (!id) return;
@@ -34,14 +41,37 @@ const CVDetail = () => {
     setError('');
     
     try {
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        setError('Authentication token not found. Please log in again.');
+        setLoading(false);
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
+        return;
+      }
+      
       const data = await getCV(id, token);
       
       if ('error' in data) {
         setError(data.error);
+        // Check if the error is auth-related
+        if (data.error.includes('token') || data.error.includes('authentication')) {
+          localStorage.removeItem('token');
+          navigate('/login');
+        }
       } else {
-        setCv(data);
+        setCv({
+          id: data.id || data.cvId,
+          cvId: data.cvId || data.id,
+          title: data.title,
+          template: data.template || data.templateId || 'classic',
+          sections: Array.isArray(data.sections) ? data.sections : [],
+          updatedAt: data.updatedAt || new Date().toISOString()
+        });
         setEditTitle(data.title);
-        setSelectedTemplate(data.template || 'classic');
+        setSelectedTemplate(data.template || data.templateId || 'classic');
       }
     } catch (error) {
       console.error('Error fetching CV:', error);
@@ -49,11 +79,11 @@ const CVDetail = () => {
     } finally {
       setLoading(false);
     }
-  }, [id, token]);
+  }, [id, navigate]);
 
   useEffect(() => {
     fetchCV();
-  }, [fetchCV]); // Now properly including the dependency
+  }, [fetchCV]);
 
   const handleRename = async () => {
     if (!id || !editTitle.trim() || operationInProgress) return;
@@ -61,14 +91,25 @@ const CVDetail = () => {
     setOperationInProgress(true);
     
     try {
-      await renameCV(id, editTitle, token);
-      setIsTitleEditing(false);
-      // Update the local state to reflect the change
-      if (cv) {
-        setCv({
-          ...cv,
-          title: editTitle
-        });
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Authentication token not found.');
+        return;
+      }
+      
+      const response = await renameCV(id, editTitle.trim(), token);
+      
+      if ('error' in response) {
+        setError(response.error);
+      } else {
+        setIsTitleEditing(false);
+        // Update the local state to reflect the change
+        if (cv) {
+          setCv({
+            ...cv,
+            title: editTitle.trim()
+          });
+        }
       }
     } catch (error) {
       console.error('Error renaming CV:', error);
@@ -84,13 +125,24 @@ const CVDetail = () => {
     setOperationInProgress(true);
     
     try {
-      await changeTemplate(id, selectedTemplate, token);
-      // Update the local state to reflect the change
-      if (cv) {
-        setCv({
-          ...cv,
-          template: selectedTemplate
-        });
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Authentication token not found.');
+        return;
+      }
+      
+      const response = await changeTemplate(id, selectedTemplate, token);
+      
+      if ('error' in response) {
+        setError(response.error);
+      } else {
+        // Update the local state to reflect the change
+        if (cv) {
+          setCv({
+            ...cv,
+            template: selectedTemplate
+          });
+        }
       }
     } catch (error) {
       console.error('Error changing template:', error);
@@ -106,9 +158,20 @@ const CVDetail = () => {
     setOperationInProgress(true);
     
     try {
-      await undoCV(id, token);
-      // Refresh the CV data
-      fetchCV();
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Authentication token not found.');
+        return;
+      }
+      
+      const response = await undoCV(id, token);
+      
+      if ('error' in response) {
+        setError(response.error);
+      } else {
+        // Refresh the CV data
+        fetchCV();
+      }
     } catch (error) {
       console.error('Error undoing changes:', error);
       setError('Failed to undo last action');
@@ -123,13 +186,48 @@ const CVDetail = () => {
     setOperationInProgress(true);
     
     try {
-      await addSection(id, { title: newSectionTitle, content: '' }, token);
-      setNewSectionTitle('');
-      setIsAddingSectionVisible(false);
-      fetchCV();
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Authentication token not found.');
+        return;
+      }
+      
+      // Create a temporary section to show in UI while waiting for API response
+      const tempSection: Section = {
+        id: generateId(),
+        title: newSectionTitle.trim(),
+        content: '',
+        type: 'text'
+      };
+      
+      // Optimistically update UI
+      if (cv) {
+        setCv({
+          ...cv,
+          sections: [...cv.sections, tempSection]
+        });
+      }
+      
+      const response = await addSection(id, { 
+        title: newSectionTitle.trim(), 
+        content: '' 
+      }, token);
+      
+      if ('error' in response) {
+        setError(response.error);
+        // Revert optimistic update
+        fetchCV();
+      } else {
+        setNewSectionTitle('');
+        setIsAddingSectionVisible(false);
+        // Refresh to get server-generated IDs
+        fetchCV();
+      }
     } catch (error) {
       console.error('Error adding section:', error);
       setError('Failed to add section');
+      // Revert optimistic update
+      fetchCV();
     } finally {
       setOperationInProgress(false);
     }
@@ -141,8 +239,18 @@ const CVDetail = () => {
     setOperationInProgress(true);
     
     try {
-      await updateSection(id, updatedSection, token);
-      // Update the local state to reflect the change
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        setError('Authentication token not found. Please log in again.');
+        setOperationInProgress(false);
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
+        return;
+      }
+      
+      // Optimistically update UI
       if (cv) {
         setCv({
           ...cv,
@@ -151,9 +259,24 @@ const CVDetail = () => {
           )
         });
       }
+      
+      const response = await updateSection(id, updatedSection, token);
+      
+      if ('error' in response) {
+        setError(response.error);
+        // Check if the error is auth-related
+        if (response.error.includes('token') || response.error.includes('authentication')) {
+          localStorage.removeItem('token');
+          navigate('/login');
+        }
+        // Revert optimistic update
+        fetchCV();
+      }
     } catch (error) {
       console.error('Error updating section:', error);
-      setError('Failed to update section');
+      setError('Failed to update section. Please try again.');
+      // Revert optimistic update
+      fetchCV();
     } finally {
       setOperationInProgress(false);
     }
@@ -165,22 +288,38 @@ const CVDetail = () => {
     setOperationInProgress(true);
     
     try {
-      await removeSection(id, sectionId, token);
-      // Update the local state to reflect the change
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Authentication token not found.');
+        return;
+      }
+      
+      // Optimistically update UI
       if (cv) {
         setCv({
           ...cv,
           sections: cv.sections.filter(s => s.id !== sectionId)
         });
       }
+      
+      const response = await removeSection(id, sectionId, token);
+      
+      if ('error' in response) {
+        setError(response.error);
+        // Revert optimistic update
+        fetchCV();
+      }
     } catch (error) {
       console.error('Error removing section:', error);
       setError('Failed to remove section');
+      // Revert optimistic update
+      fetchCV();
     } finally {
       setOperationInProgress(false);
     }
   };
 
+  // ...existing code for rendering...
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
